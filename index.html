@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Organigrama Corporativo Inlaca</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #fafafa; overflow: hidden; }
+    
+    #header {
+      width: 100%; height: 70px; background: #0d1251; 
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      position: absolute; top: 0; left: 0; z-index: 10;
+      border-bottom: 4px solid #e31e24; box-sizing: border-box;
+    }
+    #header .logo-container { height: 55px; display: flex; align-items: center; }
+    #header .logo-container img { height: 100%; width: auto; }
+    #header h2 { margin: 0; color: white; font-weight: 600; font-size: 22px; text-transform: uppercase; letter-spacing: 1.5px; }
+
+    .node rect { fill: #0d1251; rx: 4; transition: all 0.3s; cursor: pointer; }
+    .node:hover rect { fill: #1a237e; filter: brightness(1.2); }
+    .node.node--collapsed rect { stroke: #ffcc00; stroke-width: 3px; }
+    
+    .node.node--staff rect { fill: #ffffff !important; stroke: #0d1251; stroke-width: 2px; }
+    .node.node--staff text { fill: #0d1251 !important; font-weight: 700; }
+
+    .node text { fill: white; text-anchor: middle; font-weight: 500; pointer-events: none; font-size: 10px; }
+    
+    .link { fill: none; stroke: #555555; stroke-width: 1.5px; transition: all 0.3s; }
+    .link.link--staff { stroke: #555555; stroke-dasharray: 4,4; }
+    
+    svg { width: 100vw; height: 100vh; cursor: grab; display: block; }
+    
+    .controls { 
+      position: absolute; top: 90px; left: 20px; z-index: 11; 
+      background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 8px; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 10px;
+      border: 1px solid #ddd;
+    }
+    .btn-group { display: flex; flex-wrap: wrap; gap: 6px; max-width: 250px; }
+    button { 
+      padding: 8px 12px; cursor: pointer; border: 1px solid #0d1251; 
+      background: white; color: #0d1251; border-radius: 4px; font-size: 11px; font-weight: 600; transition: 0.3s;
+    }
+    button:hover { background: #0d1251; color: white; }
+    .btn-primary { background: #0d1251; color: white; }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <div class="logo-container">
+    <img src="https://user5814.na.imgto.link/public/20260327/222.avif" alt="Logo Inlaca">
+  </div>
+  <h2>Esquema Organizacional</h2>
+</div>
+
+<div class="controls">
+  <div class="btn-group">
+    <button onclick="filterLevel(1)">Nivel 1</button>
+    <button onclick="filterLevel(2)">Nivel 2</button>
+    <button onclick="filterLevel(3)">Nivel 3</button>
+    <button onclick="filterLevel(4)">Nivel 4</button>
+    <button onclick="filterLevel(5)">Nivel 5</button>
+    <button onclick="filterLevel(6)">Nivel 6</button>
+    <button onclick="expandAll()" class="btn-primary">Ver Todo</button>
+  </div>
+  <button onclick="resetZoom()">Re-centrar Organigrama</button>
+</div>
+
+<svg id="chart"></svg>
+
+<script>
+const treeData = {
+  name: "Presidencia",
+  children: [
+    { 
+      name: "Auditoría Interna",
+      isStaffBranch: true,
+      children: [{ name: "Auditor de Inventario", isStaffBranch: true }] 
+    },
+    { 
+      name: "Dirección General",
+      children: [
+        { name: "Tecnología de la Información y Comunicación", isStaffBranch: true },
+        { 
+          name: "Dirección Comercial",
+          children: [
+            { name: "Cadena de Suministros" ,
+                  children: [{ name: "Coordinación de Planificación y Logistica de Plantas" ,
+                  children: [{ name: "Especialista de Distribución Primaria" }]
+                },
+                              { name: "Coordinación de Almacenes" ,
+                  children: [{ name: "Almacen de Materia Primay Material de Empaque - Planta Chivacoa" },
+                            { name: "Almacen de Materia Prima y Material de Empaque - Planta Valencia" },
+                            { name: "Almacen de Materia Prima y Material de Empaque - Planta Acarigua" },
+                            { name: "Almacen de Producto Terminado - Planta Chivacoa" },
+                            { name: "Almacen de Producto Terminado - Planta Valencia" }
+                  ]
+                },
+                              { name: "Coordinación de Compras" ,
+                  children: [{ name: "Especialista Materia Prima y Empaque" },
+                            { name: "Especialista Insumos Generales" },
+                            { name: "Especialista Insumos Industriales" },
+                            { name: "Especialista de Compras Internacionales" }
+                  ]
+                }
+                  ]
+                }, 
+            { name: "Mercadeo" ,
+                  children: [{ name: "Especialista de Marcas - Lacteos Carabobo Mi Vaca" },
+                              { name: "Especialista de Marcas - Jugos, Té y Aguas - California, Paramo y Vida" },
+                              { name: "Especialista de Marcas - Derivados Lacteos - Huesitos y La Parisienne" },
+                              { name: "Especialista de Marcas - Beebidas alcoholicas - Toro Bravo y Vlast" },
+                              { name: "Community" ,
+                  children: [{ name: "Diseñador - Toro Bravo, Vlast, Mi Vaca" },
+                              { name: "Diseñador California, Inlaca, La Parisienne" },
+                              { name: "Diseñador Huesitos, Splash, Vida" },
+                              { name: "Diseñador Paramo, Carabobo, Pure Stevia" },
+                              { name: "Diseñador Industrial - Diseño Empaques" },
+                  ]
+                },
+                              { name: "Eventos Especiales" ,
+                  children: [{ name: "Representante de Eventos Especiales" }]
+                }
+                  ]
+                } ,
+            { name: "Operaciones Comerciales y Logística" ,
+                  children: [{ name: "Cedis Capital" ,
+                  children: [{ name: "Coordinador Administrativo" },
+                              { name: "Almacenista" },
+                              { name: "Ayudantes" },
+                              { name: "Montacarguista" }
+                  ]
+                },
+                              { name: "Cedis Centro" ,
+                  children: [{ name: "Coordinador Administrativo" },
+                              { name: "Almacenista" },
+                              { name: "Ayudantes" },
+                              { name: "Montacarguista" }
+                  ]
+                },
+                              { name: "Cedis Oriente Norte" ,
+                  children: [{ name: "Coordinador Administrativo" },
+                              { name: "Almacenista" },
+                              { name: "Ayudantes" },
+                              { name: "Montacarguista" }
+                  ]
+                },
+                              { name: "Cedis Occidente" ,
+                  children: [{ name: "Coordinador Administrativo" },
+                              { name: "Almacenista" },
+                              { name: "Ayudantes" },
+                              { name: "Montacarguista" }
+                  ]
+                }
+                  ]
+                } ,
+            { name: "Proyectos Comerciales e Inteligencia de Negocios" ,
+                  children: [{ name: "Supervisor de Inteligencia de Negocios" ,
+                  children: [{ name: "Analista de Inteligencia de Negocios" }]
+                },
+                              { name: "Coordinador de Proyectos" }
+                  ]
+                } ,
+            { name: "Trade Marketing" ,
+                  children: [{ name: "Analista de Trade Marketing" },
+                              { name: "Coordinación de Mercaderista" },
+                              { name: "Mercaderistas Región Zulia" },
+                              { name: "Mercaderistas Región Falcón" },
+                              { name: "Mercaderistas Región Centro Occidental" },
+                              { name: "Mercaderistas Región Centro" },
+                              { name: "Mercaderistas Región Capital" },
+                              { name: "Mercaderistas Región Oriente Norte" },
+                              { name: "Mercaderistas Región Oriente Sur" },
+                              { name: "Mercaderistas Región Andes" }
+                  ]
+                } ,
+            { name: "Ventas" ,
+                  children: [ { name: "Coordinación de Ventas Región Andes / Sur del Lago" ,
+                  children: [ { name: "Representante de Ventas Distribuidores" },
+                              { name: "Representante de Ventas Canal Moderno" },
+                              { name: "Representante de Ventas Canal Tradicional" },
+                              { name: "Representante de Ventas Horeca y Bebidas Alcoholicas" }
+                  ]
+                },
+                              { name: "Coordinación de Ventas Región Occidente / Falcón" ,
+                  children: [ { name: "Representante de Ventas Distribuidores" },
+                              { name: "Representante de Ventas Canal Moderno" },
+                              { name: "Representante de Ventas Canal Tradicional" },
+                              { name: "Representante de Ventas Horeca y Bebidas Alcoholicas" }
+                  ]
+                },
+                              { name: "Coordinación de Ventas Región Centro Occidente" ,
+                  children: [ { name: "Representante de Ventas Distribuidores" },
+                              { name: "Representante de Ventas Canal Moderno" },
+                              { name: "Representante de Ventas Canal Tradicional" },
+                              { name: "Representante de Ventas Horeca y Bebidas Alcoholicas" }
+                  ]
+                },
+                              { name: "Coordinación de Ventas Región Centro" ,
+                  children: [ { name: "Representante de Ventas Distribuidores" },
+                              { name: "Representante de Ventas Canal Moderno" },
+                              { name: "Representante de Ventas Canal Tradicional" },
+                              { name: "Representante de Ventas Horeca y Bebidas Alcoholicas" }
+                  ]
+                },
+                              { name: "Coordinación de Ventas Región Capital" ,
+                  children: [ { name: "Representante de Ventas Distribuidores" },
+                              { name: "Representante de Ventas Canal Moderno" },
+                              { name: "Representante de Ventas Canal Tradicional" },
+                              { name: "Representante de Ventas Horeca y Bebidas Alcoholicas" }
+                  ]
+                },
+                              { name: "Coordinación de Ventas Región Oriente Norte" ,
+                  children: [ { name: "Representante de Ventas Distribuidores" },
+                              { name: "Representante de Ventas Canal Moderno" },
+                              { name: "Representante de Ventas Canal Tradicional" },
+                              { name: "Representante de Ventas Horeca y Bebidas Alcoholicas" }
+                  ]
+                },
+                              { name: "Coordinación de Ventas Región Oriente Sur" ,
+                  children: [ { name: "Representante de Ventas Distribuidores" },
+                              { name: "Representante de Ventas Canal Moderno" },
+                              { name: "Representante de Ventas Canal Tradicional" },
+                              { name: "Representante de Ventas Horeca y Bebidas Alcoholicas" }
+                  ]
+                }
+                  ]
+                } 
+          ]
+        },
+        { 
+          name: "Dirección Contabilidad y Finanzas",
+          children: [
+            { 
+              name: "Gerencia Contabilidad y Finanzas",
+              children: [
+                { 
+                  name: "Jefe de Contabilidad",
+                  children: [{ name: "Analista de Contable" },
+                               { name: "Analista de Cuentas por Pagar" }
+                  ]
+                }, 
+                { 
+                  name: "Coordinación de Tributos",
+                  children: [ 
+                    { name: "Analista de Tributos" }
+                  ]
+                },
+                { 
+                  name: "Coordinación de Tesorería",
+                  children: [{ name: "Analista de Tesorería" }]
+                },
+                { 
+                  name: "Coordinación de Cuentas por Cobrar"},
+                { name: "Especialista Financiero" ,
+                  children: [
+                    { name: "Analista de Facturación" }
+                  ]
+                },
+                { name: "Especialista Control de Gestión y Costos" }
+              ]
+            }
+          ]
+        },
+        { 
+          name: "Dirección Jurídica",
+          children: [
+            { name: "Admin Licencias e Impuestos" }, 
+            { name: "Tramites Servicios y Solvencias" },
+            { name: "Asistentes Jurídicos" }, 
+            { name: "Mercantil Civil y Laboral" }, 
+            { name: "Penal SAP y Cobranzas" }
+          ]
+        },
+        { 
+          name: "Dirección Recursos Humanos",
+          children: [
+            { name: "Asistente Integral de Dirección" },
+            { name: "Seguridad Patrimonial" },
+            { 
+              name: "Coordinación Recursos Humanos",
+              children: [
+                { 
+                  name: "Compensación y Nómina",
+                  children: [{ name: "Especialista" }, { name: "Analista por Planta" }]
+                }, 
+                { 
+                  name: "Capacitación",
+                  children: [{ name: "Analista por Planta" }]
+                },
+                { 
+                  name: "Bienestar y Relaciones Laborales",
+                  children: [{ name: "Encargado de Área" }, { name: "Analista por Planta" }]
+                }, 
+                { 
+                  name: "Higiene y Seguridad Industrial",
+                  children: [
+                    { 
+                      name: "Jefe HSI por Planta",
+                      children: [{ name: "Analista por Planta" }]
+                    }, 
+                    { 
+                      name: "Médico Ocupacional por Planta",
+                      children: [{ name: "Enfermeras por Planta" }]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        { 
+          name: "Dirección de Operaciones Planta Chivacoa",
+          children: [
+            { 
+              name: "Coordinación Calidad",
+              children: [
+                { name: "Microbiología" },
+                { name: "Higienización" },
+                { 
+                  name: "Analistas",
+                  children: [
+                    { name: "Materia Prima" },
+                    { name: "Vida Útil y Aguas Residuales" },
+                    { name: "De Línea" },
+                    { name: "Despacho / Producto Terminado" }
+                  ]
+                }
+              ]
+            },
+            { 
+              name: "Coordinación de Servicio Técnico",
+              children: [
+                { 
+                  name: "Supervisores",
+                  children: [
+                    { 
+                      name: "Procesos",
+                      children: [
+                        { name: "Instrumentista" },
+                        { name: "Mecánico Industrial" },
+                        { name: "Electricista" },
+                        { name: "Operador Ptar" }
+                      ]
+                    }, 
+                    { 
+                      name: "Potencia",
+                      children: [{ name: "Operadores" }]
+                    },
+                    { 
+                      name: "Llenadora",
+                      children: [{ name: "Electromecánicos" }]
+                    }
+                  ]
+                }
+              ]
+            },
+            { 
+              name: "Coordinación de Producción",
+              children: [
+                { 
+                  name: "Supervisores",
+                  children: [
+                    { name: "Operador de Recepción" }, 
+                    { name: "Operador Equipo de Embalaje" },
+                    { name: "Operador Procesos Térmicos" },
+                    { name: "Operador LLenadora" },
+                    { name: "Operador CIP-COP" }, 
+                    { name: "Operador Jugos y Lacteos" },
+                    { name: "Ayudantes de Producción" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        { 
+          name: "Dirección de Operaciones Planta Valencia",
+          children: [
+            { 
+              name: "Coordinación Calidad",
+              children: [
+                { name: "Microbiología" }, 
+                { name: "Auditoria" },
+                { name: "Formulación y Desarrollo" }, 
+                { name: "Ambiente" },
+                { 
+                  name: "Supervisores",
+                  children: [
+                    { 
+                      name: "Analistas",
+                      children: [
+                        { name: "Materia Prima" },
+                        { name: "Despacho / Producto Terminado" },
+                        { name: "Línea", children: [{ name: "Operadores" }] }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            { 
+              name: "Coordinación de Servicio Técnico",
+              children: [
+                { 
+                  name: "Supervisores",
+                  children: [
+                    { name: "Mecánicos" }, 
+                    { name: "Electricistas" },
+                    { name: "Instrumentistas" }, 
+                    { name: "Operadores" }
+                  ]
+                }
+              ]
+            },
+            { 
+              name: "Coordinación de Producción",
+              children: [
+                { name: "Mejoras Continuas" },
+                { 
+                  name: "Supervisores",
+                  children: [
+                    { name: "Produccion" }, 
+                    { name: "Operadores" }, 
+                    { name: "Preparacion y Saneamiento" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+const nodeW = 165, nodeH = 50, colWidth = 260, vGap = 120, listY = 60, staffGap = 40;
+const svg = d3.select("#chart");
+const container = svg.append("g");
+const zoom = d3.zoom().on("zoom", (e) => container.attr("transform", e.transform));
+svg.call(zoom);
+
+let root = d3.hierarchy(treeData);
+
+function isLastBeforeLeaves(d) {
+  if (!d.children) return false;
+  return d.children.every(child => !child.children && !child._children);
+}
+
+function isInStaffBranch(d) {
+  let current = d;
+  while (current) {
+    if (current.data.isStaffBranch) return true;
+    current = current.parent;
+  }
+  return false;
+}
+
+function getBranchWidth(d) {
+  if (isInStaffBranch(d) && d.depth === 1) return 0; 
+  if (!d.children || d.children.length === 0 || isLastBeforeLeaves(d)) return colWidth;
+  const sibs = d.children.filter(c => !isInStaffBranch(c));
+  if (sibs.length === 0) return colWidth;
+  return sibs.reduce((acc, curr) => acc + getBranchWidth(curr), 0);
+}
+
+function update() {
+  const nodes = root.descendants();
+  const links = root.links();
+
+  nodes.forEach(d => {
+    if (d.depth === 0) { d.x = 0; d.y = 0; }
+    else if (d.data.isStaffBranch) {
+      d.x = d.parent.x + nodeW + staffGap;
+      d.y = d.parent.y;
+    } 
+    else {
+      if (d.parent && isLastBeforeLeaves(d.parent)) {
+        d.x = d.parent.x + 35;
+        const idx = d.parent.children.indexOf(d);
+        d.y = d.parent.y + vGap + (idx * listY);
+      } 
+      else {
+        // --- LOGICA DE DESPLAZAMIENTO VERTICAL (JEFE DE CONTABILIDAD) ---
+        let verticalOffset = 0;
+        if (d.data.name === "Jefe de Contabilidad") {
+            verticalOffset = -35; // Se eleva
+        } else if (d.parent && d.parent.children.some(c => c.data.name === "Jefe de Contabilidad")) {
+            verticalOffset = 15;  // Sus hermanos bajan un poco
+        }
+
+        d.y = d.parent.y + vGap + verticalOffset;
+        
+        const sibs = (d.parent.children || []).filter(s => !isInStaffBranch(s));
+        const idx = sibs.indexOf(d);
+        let leftOffset = 0;
+        for (let i = 0; i < idx; i++) leftOffset += getBranchWidth(sibs[i]);
+        const totalWidthAtLevel = sibs.reduce((acc, curr) => acc + getBranchWidth(curr), 0);
+        d.x = d.parent.x + leftOffset - (totalWidthAtLevel / 2) + (getBranchWidth(d) / 2);
+      }
+    }
+  });
+
+  const link = container.selectAll(".link").data(links, d => d.target.id || (d.target.id = Math.random()));
+  link.exit().remove();
+  link.enter().append("path")
+    .merge(link)
+    .attr("class", d => isInStaffBranch(d.target) ? "link link--staff" : "link")
+    .transition().duration(450)
+    .attr("d", d => {
+      const sX = d.source.x + nodeW/2, sY = d.source.y + nodeH;
+      const tX = d.target.x + nodeW/2, tY = d.target.y;
+      
+      if (isInStaffBranch(d.target)) return `M${d.source.x + nodeW},${d.source.y + nodeH/2} H${d.target.x}`;
+      
+      if (isLastBeforeLeaves(d.source)) return `M${d.source.x + 20},${sY} V${d.target.y + nodeH/2} H${d.target.x}`;
+      
+      // Conectores ajustados para alturas variables (punto de quiebre fijo en vGap/2)
+      return `M${sX},${sY} V${sY + (vGap/2)} H${tX} V${tY}`;
+    });
+
+  const node = container.selectAll(".node").data(nodes, d => d.id || (d.id = Math.random()));
+  node.exit().remove();
+  
+  const nodeEnter = node.enter().append("g")
+    .attr("transform", d => `translate(${d.parent ? d.parent.x : d.x},${d.parent ? d.parent.y : d.y})`)
+    .on("click", (e, d) => {
+      if (d.children) { d._children = d.children; d.children = null; }
+      else if (d._children) {
+        d.children = d._children;
+        d._children = null;
+        if (d.children) {
+          d.children.forEach(child => {
+            if (child.children) {
+              child._children = child.children;
+              child.children = null;
+            }
+          });
+        }
+      }
+      update();
+    });
+  
+  nodeEnter.append("rect").attr("width", nodeW).attr("height", nodeH);
+  nodeEnter.append("text").attr("x", nodeW/2).attr("y", 0).attr("dy", "0");
+
+  const nodeUpdate = nodeEnter.merge(node);
+  nodeUpdate.attr("class", d => {
+    let cls = isInStaffBranch(d) ? "node node--staff" : "node";
+    if (d._children) cls += " node--collapsed";
+    return cls;
+  }).transition().duration(450).attr("transform", d => `translate(${d.x},${d.y})`);
+
+  nodeUpdate.select("text").text(d => d.data.name).call(wrapText, nodeW - 15);
+}
+
+function wrapText(text, width) {
+  text.each(function() {
+    var text = d3.select(this),
+        words = text.text().split(/\s+/).reverse(),
+        word, line = [], lineNumber = 0, lineHeight = 1.1,
+        y = text.attr("y"), x = text.attr("x"),
+        dy = parseFloat(text.attr("dy") || 0),
+        tspan = text.text(null).append("tspan").attr("x", x).attr("y", y).attr("dy", dy + "em");
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.text(line.join(" "));
+      if (tspan.node().getComputedTextLength() > width) {
+        line.pop(); tspan.text(line.join(" "));
+        line = [word];
+        tspan = text.append("tspan").attr("x", x).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+      }
+    }
+    const offset = (nodeH - ((lineNumber + 1) * 11)) / 2 + 8;
+    text.attr("transform", `translate(0, ${offset})`);
+  });
+}
+
+function filterLevel(l) {
+  const process = (d) => {
+    if (d.depth < l) {
+      if (d._children) { d.children = d._children; d._children = null; }
+      if (d.children) d.children.forEach(process);
+    } 
+    else {
+      if (d.children) { d._children = d.children; d.children = null; }
+    }
+  };
+  process(root);
+  update();
+  setTimeout(resetZoom, 500);
+}
+
+function expandAll() {
+  const exp = (d) => {
+    if (d._children) { d.children = d._children; d._children = null; }
+    if (d.children) d.children.forEach(exp);
+  };
+  exp(root);
+  update();
+}
+
+function resetZoom() {
+  const scale = Math.min(window.innerWidth / 1600, 0.65);
+  svg.transition().duration(800).call(
+    zoom.transform, 
+    d3.zoomIdentity.translate(window.innerWidth/2, 100).scale(scale)
+  );
+}
+
+// INICIALIZACIÓN: NIVEL 2 POR DEFECTO
+root.descendants().forEach(d => {
+  if (d.depth >= 2 && d.children) {
+    d._children = d.children;
+    d.children = null;
+  }
+});
+
+update();
+resetZoom();
+window.addEventListener('resize', resetZoom);
+</script>
+</body>
+</html>
